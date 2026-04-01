@@ -107,6 +107,30 @@ describe('MIDI input wrapper', () => {
     expect(synth.offs[0]).toBeCalledWith(127);
   });
 
+  it('re-triggers an already active key by releasing the previous voice first', () => {
+    const synth = new MockSynth();
+    const midiIn = new MidiIn(synth.noteOn.bind(synth), new Set([1]));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mockInput: any = {};
+    const input = new Input(mockInput);
+    midiIn.listen(input);
+
+    // First note-on on channel 1
+    mockInput.onmidimessage({data: [144, 69, 100]});
+    expect(synth.offs).toHaveLength(1);
+    expect(synth.offs[0]).not.toBeCalled();
+
+    // Re-trigger before note-off should release the previous callback.
+    mockInput.onmidimessage({data: [144, 69, 70]});
+    expect(synth.offs).toHaveLength(2);
+    expect(synth.offs[0]).toBeCalledWith(70);
+    expect(synth.offs[1]).not.toBeCalled();
+
+    // Final note-off should only target the latest callback.
+    mockInput.onmidimessage({data: [128, 69, 60]});
+    expect(synth.offs[1]).toBeCalledWith(60);
+  });
+
   it('provides the channel number for e.g. octave shifting', () => {
     const synth = new MockOctaveSynth();
     const midiIn = new MidiIn(

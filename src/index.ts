@@ -361,8 +361,15 @@ export class MidiIn {
     this.log(
       `Midi note on ${noteNumber} at velocity ${attack} on channel ${channel}`,
     );
+    const id = noteIdentifier(event);
+    const existingNoteOff = this.noteOffMap.get(id);
+    if (existingNoteOff !== undefined) {
+      this.noteOffMap.delete(id);
+      existingNoteOff(rawAttack);
+    }
+
     const noteOff = this.callback(noteNumber, rawAttack, channel);
-    this.noteOffMap.set(noteIdentifier(event), noteOff);
+    this.noteOffMap.set(id, noteOff);
   }
 
   private noteOff(event: NoteMessageEvent) {
