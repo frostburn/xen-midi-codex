@@ -358,6 +358,10 @@ export class MidiIn {
     const noteNumber = event.note.number;
     const attack = event.note.attack;
     const rawAttack = event.note.rawAttack;
+    if (rawAttack === 0) {
+      this.noteOff(event);
+      return;
+    }
     this.log(
       `Midi note on ${noteNumber} at velocity ${attack} on channel ${channel}`,
     );

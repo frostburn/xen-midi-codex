@@ -148,6 +148,23 @@ describe('MIDI input wrapper', () => {
     expect(synth.offs[1]).toBeCalledWith(60);
   });
 
+  it('treats note-on with zero velocity as note-off', () => {
+    const synth = new MockSynth();
+    const midiIn = new MidiIn(synth.noteOn.bind(synth), new Set([1]));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mockInput: any = {};
+    const input = new Input(mockInput);
+    midiIn.listen(input);
+
+    mockInput.onmidimessage({data: [144, 69, 100]});
+    expect(synth.offs).toHaveLength(1);
+
+    // Some devices send note-on with velocity 0 instead of note-off.
+    mockInput.onmidimessage({data: [144, 69, 0]});
+    expect(synth.offs[0]).toBeCalledWith(0);
+    expect(synth.offs).toHaveLength(1);
+  });
+
   it('provides the channel number for e.g. octave shifting', () => {
     const synth = new MockOctaveSynth();
     const midiIn = new MidiIn(
