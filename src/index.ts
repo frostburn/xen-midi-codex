@@ -358,6 +358,7 @@ export class MidiIn {
     const noteNumber = event.note.number;
     const attack = event.note.attack;
     const rawAttack = event.note.rawAttack;
+    // Some MIDI devices encode note-off as note-on with velocity 0.
     if (rawAttack === 0) {
       this.noteOff(event);
       return;
