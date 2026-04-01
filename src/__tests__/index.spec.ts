@@ -48,6 +48,24 @@ describe('Microtonal MIDI output', () => {
     off1100(MAX_VELOCITY);
     expect(sendSpy).toBeCalledTimes(21);
   });
+
+  it('logs zero velocity correctly instead of falling back to default', () => {
+    const mockOutput = new MockMIDIOutput();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const output = new Output(mockOutput as any);
+    const log = vi.fn();
+    const out = new MidiOut(output, new Set([1]), log);
+
+    const off = out.sendNoteOn(440, 0);
+    expect(log).toHaveBeenCalledWith(
+      'Sending note on 69 at velocity 0 on channel 1 with bend 0 resulting from frequency 440',
+    );
+
+    off(0);
+    expect(log).toHaveBeenCalledWith(
+      'Sending note off 69 at velocity 0 on channel 1',
+    );
+  });
 });
 
 class MockSynth {
@@ -75,7 +93,6 @@ class MockOctaveSynth {
     return () => undefined;
   }
 }
-
 describe('MIDI input wrapper', () => {
   it('triggers note offs from different channel at the same index', () => {
     const synth = new MockSynth();
@@ -123,7 +140,7 @@ describe('MIDI input wrapper', () => {
     // Re-trigger before note-off should release the previous callback.
     mockInput.onmidimessage({data: [144, 69, 70]});
     expect(synth.offs).toHaveLength(2);
-    expect(synth.offs[0]).toBeCalledWith(70);
+    expect(synth.offs[0]).toBeCalledWith();
     expect(synth.offs[1]).not.toBeCalled();
 
     // Final note-off should only target the latest callback.
